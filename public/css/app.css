@@ -1,0 +1,10 @@
+nav.navbar { margin-bottom: 16px; }
+
+pre {
+  background: #eee;
+  padding: 16px;
+  border-radius: 8px;
+}
+
+h2 { margin-top: 32px; }
+h3 { margin-top: 16px; }

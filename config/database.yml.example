@@ -1,0 +1,10 @@
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  pool: 5
+  username: bart
+  password:
+
+development:
+  <<: *default
+  database: workshop_db_03
