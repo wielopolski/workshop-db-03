@@ -1,4 +1,4 @@
-# Workshop DB
+# Workshop DB 03 - CTEs and window functions
 
 ## Installation
 
@@ -20,4 +20,3 @@ Starting a console:
 ```
 ./bin/irb
 ```
-

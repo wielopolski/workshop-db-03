@@ -8,6 +8,7 @@ require 'sinatra/activerecord'
 
 autoload_dirs = %w[
   models
+  helpers
 ]
 
 autoload_dirs.each do |dir|

@@ -1,0 +1,137 @@
+%h4 Ex1.
+.row
+  .col-md-6
+    Write a query that returns only first and last match for each month<br>
+    (hint: <code>row_number()</code>)
+
+  .col-md-6.expandable.code-group
+    %a.btn.btn-secondary{href: '#', class: 'expand-link'} View answer
+    .content
+      %pre.bold.green
+        %code
+          :preserve
+            WITH numbered_matches AS (
+              SELECT
+                *,
+                row_number() OVER ascending AS ascending_index,
+                row_number() OVER descending AS descending_index
+              FROM matches
+              WINDOW ascending AS (
+                PARTITION BY game_id, year, month
+                ORDER BY played_at ASC, id ASC
+              ), descending AS (
+                PARTITION BY game_id, year, month
+                ORDER BY played_at DESC, id DESC
+              )
+            )
+      %pre
+        %code
+          :preserve
+            SELECT
+              id,
+              game_id,
+              played_at
+            FROM numbered_matches
+      %pre.bold.green
+        %code
+          :preserve
+            WHERE
+              ascending_index = 1 OR
+              descending_index = 1
+            ORDER BY played_at, id
+
+%h4 Ex2.
+.row
+  .col-md-6
+    Write a query that returns all scores and for each row holds a point difference to next player (the one who scored higher). First player different should be zero. (hint: <code>lead(...)</code>)
+
+  .col-md-6.expandable.code-group
+    %a.btn.btn-secondary{href: '#', class: 'expand-link'} View answer
+    .content
+      %pre.bold.green
+        %code
+          :preserve
+            SELECT
+              *,
+              lead(points, 1, points) OVER per_match - points
+            FROM scores
+            WHERE match_id in (1, 7)
+            WINDOW per_match AS (
+              PARTITION BY match_id
+              ORDER BY points ASC
+            )
+
+%h4 Ex3.
+.row
+  .col-md-6
+    Write a query that shows player count trend for each match in relation to previous match. (hint: <code>lag(...)</code>).
+    Trend column should contain following data:
+    %ul
+      %li '+' - when we have positive trend
+      %li '-' - when we have negative trend
+      %li '0' - when nothing changed
+
+  .col-md-6.expandable.code-group
+    %a.btn.btn-secondary{href: '#', class: 'expand-link'} View answer
+    .content
+      %pre
+        %code
+          :preserve
+            WITH matches_with_players AS (
+              SELECT
+                matches.*,
+                COUNT(scores.*) AS player_count
+              FROM matches
+              JOIN scores ON scores.match_id = matches.id
+              GROUP BY matches.id
+            )
+      %pre.bold.green
+        %code
+          :preserve
+            SELECT
+              *,
+              CASE
+              WHEN lag(player_count, 1) OVER per_game > player_count THEN
+                '-'
+              WHEN lag(player_count, 1) OVER per_game < player_count THEN
+                '+'
+              ELSE
+                '='
+              END AS participation_trend
+            FROM matches_with_players
+            WINDOW per_game AS (
+              PARTITION BY game_id
+              ORDER BY played_at, id
+            )
+
+%h4 Ex4.
+.row
+  .col-md-6
+    Divide matches into quartiles by their score (hint: <code>ntile(...)</code>). For example:
+    = DataHelpers.table(@data)
+
+  .col-md-6.expandable.code-group
+    %a.btn.btn-secondary{href: '#', class: 'expand-link'} View answer
+    .content
+      %pre
+        %code
+          :preserve
+            WITH matches_with_score AS (
+              SELECT
+                matches.*,
+                SUM(scores.points) AS total_points
+              FROM matches
+              JOIN scores ON scores.match_id = matches.id
+              GROUP BY matches.id
+            )
+      %pre.bold.green
+        %code
+          :preserve
+            SELECT
+              *,
+              ntile(4) OVER per_game AS bucket
+            FROM matches_with_score
+            WINDOW per_game AS (
+              PARTITION BY game_id
+              ORDER BY total_points
+            )

@@ -1,0 +1,23 @@
+- if header
+  %table.data
+    %thead
+      %tr
+        - data[0].each do |header|
+          %th= header
+    %tbody
+      - if data.size > 1
+        - data[1..-1].each_with_index do |row, y|
+          %tr{class: [("selected" if selected[y + 1]), ("border" if border[y + 1])].compact.join(" ")}
+            - row.each_with_index do |cell, x|
+              %td
+                = cell
+                - if !labels[y + 1].nil? && x == 0
+                  - Array.wrap(labels[y + 1]).each do |label|
+                    %span.badge= label
+- else
+  %table.data
+    %tbody
+      - data.each do |row|
+        %tr
+          - row.each do |cell|
+            %td= cell

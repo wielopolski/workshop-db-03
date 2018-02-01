@@ -1,0 +1,168 @@
+%h4
+  Simple non-recursive CTE syntax
+
+%pre
+  %code
+    :preserve
+      -- CTE = Common Table Expression (aka WITH statement)
+
+      WITH name_1 AS (
+        ...
+      ), name_N AS (
+        ...
+      )
+      SELECT ...
+
+%blockquote
+  WITH provides a way to write auxiliary statements for use in a larger query. These statements, which are often referred to as Common Table Expressions or CTEs, can be thought of as defining temporary tables that exist just for one query. Each auxiliary statement in a WITH clause can be a SELECT, INSERT, UPDATE, or DELETE; and the WITH clause itself is attached to a primary statement that can also be a SELECT, INSERT, UPDATE, or DELETE.
+
+%h5 Example that does not make sense:
+
+.row
+  .col-md-6
+    %pre
+      %code
+        :preserve
+          SELECT
+            m.*,
+            avg(s.points) AS average_score
+          FROM matches m
+          JOIN scores s ON s.match_id = m.id
+          GROUP BY m.id
+
+  .col-md-6.code-group
+    %pre.bold.green
+      %code
+        :preserve
+          WITH matches_with_score AS (
+    %pre
+      %code
+        :preserve
+            SELECT
+              m.*,
+              avg(s.points) AS average_score
+            FROM matches m
+            JOIN scores s ON s.match_id = m.id
+            GROUP BY m.id
+    %pre.bold.green
+      %code
+        :preserve
+          )
+          SELECT * FROM matches_with_score
+
+
+%div
+  %h5 Ex1. Matches with average score higher than monthly average score
+.row
+  .col-md-6.code-group
+    %pre
+      %code
+        :preserve
+          SELECT
+            per_match.*,
+            per_month.average AS month_average
+          FROM (
+    %pre.bold.red
+      %code
+        :preserve
+          SELECT
+            mm.*,
+            round(avg(ss.points), 2) AS average
+          FROM matches mm
+          JOIN scores ss ON
+            ss.match_id = mm.id
+          GROUP BY
+            mm.id
+    %pre
+      %code
+        :preserve
+          ) per_match
+          JOIN (
+    %pre.bold.red
+      %code
+        :preserve
+          SELECT
+            mm.game_id,
+            mm.year,
+            mm.month,
+            round(avg(ss.points), 2) AS average
+          FROM matches mm
+          JOIN scores ss ON
+            ss.match_id = mm.id
+          GROUP BY
+            mm.game_id,
+            mm.year,
+            mm.month
+    %pre
+      %code
+        :preserve
+          ) per_month ON
+            per_month.year = per_match.year AND
+            per_month.month = per_match.month AND
+            per_month.game_id = per_match.game_id
+          WHERE
+            per_match.average >= per_month.average
+          ORDER BY
+            per_match.played_at,
+            per_match.id
+
+  .col-md-6.code-group.expandable
+    %a.btn.btn-secondary{href: '#', class: 'expand-link'} View answer
+
+    .content
+      %pre.bold
+        %code
+          :preserve
+            WITH per_match AS
+            (
+      %pre.bold.green
+        %code
+          :preserve
+            SELECT
+              mm.*,
+              round(avg(ss.points), 2) AS average
+            FROM matches mm
+            JOIN scores ss ON
+              ss.match_id = mm.id
+            GROUP BY
+              mm.id
+      %pre.bold
+        %code
+          :preserve
+            ),
+              per_month AS
+            (
+      %pre.bold.green
+        %code
+          :preserve
+            SELECT
+              mm.game_id,
+              mm.year,
+              mm.month,
+              round(avg(ss.points), 2) AS average
+            FROM matches mm
+            JOIN scores ss ON
+              ss.match_id = mm.id
+            GROUP BY
+              mm.game_id,
+              mm.year,
+              mm.month
+      %pre
+        %code
+          :preserve
+            )
+            SELECT
+              per_match.*,
+              per_month.average AS month_average
+            FROM
+              per_match
+            JOIN
+              per_month ON
+              per_month.year = per_match.year AND
+              per_month.month = per_match.month AND
+              per_month.game_id = per_match.game_id
+            WHERE
+              per_match.average >= per_month.average
+            ORDER BY
+              per_match.played_at,
+              per_match.id

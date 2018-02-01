@@ -1,0 +1,220 @@
+%h4
+  Window functions
+
+%blockquote
+  %strong Definition:
+  A window function performs a calculation across a set of table rows that are <strong>somehow</strong> related to the current row
+
+%blockquote
+  Window functions are permitted only in the SELECT list and the ORDER BY clause of the query.
+  They are forbidden elsewhere, such as in GROUP BY, HAVING and WHERE clauses.
+  This is because they logically execute after the processing of those clauses.
+  Also, window functions execute after regular aggregate functions.
+  This means it is valid to include an aggregate function call in the arguments of a window function, but not vice versa.
+
+%h5 Simplest form
+.row
+  .col-md-6.code-group
+    %h6 Window function
+    %pre
+      %code
+        :preserve
+          SELECT
+            scores.*,
+    %pre.bold.green
+      %code
+        :preserve
+            SUM(points) OVER (PARTITION BY match_id) AS total
+    %pre
+      %code
+        :preserve
+          FROM
+            scores
+
+          -- filtering only added to better see what's happening
+          WHERE match_id in (1, 7)
+
+  .col-md-6.code-group
+    %h6 Non-window function equivalent
+    %pre
+      %code
+        :preserve
+          SELECT
+            scores.*,
+            sums.total
+          FROM scores
+          JOIN (
+    %pre.bold.red
+      %code
+        :preserve
+            SELECT match_id, SUM(points) total FROM scores
+            GROUP BY match_id
+    %pre
+      %code
+        :preserve
+          ) sums USING (match_id)
+
+          -- filtering only added to better see what's happening
+          WHERE scores.match_id in (1, 7)
+
+  %blockquote.hint
+    You can try running <strong>EXPLAIN</strong> to compare execution plans for both queries.
+
+%h5 "Running sum" behavior
+.row
+  .col-md-8
+    %pre
+      %code
+        :preserve
+          SELECT
+            scores.*,
+            rank() OVER (PARTITION BY match_id ORDER BY points DESC) AS place
+          FROM
+            scores
+
+          -- filtering only added to better see what's happening
+          WHERE match_id in (1, 7)
+  .col-md-4
+    %h6 Ex1. Try using following functions to see the difference:
+    %ul
+      %li
+        %code
+          dense_rank()
+      %li
+        %code
+          percent_rank()
+      %li
+        %code
+          cume_dist()
+
+.row
+  .col-md-3
+    %h6 1. Data
+    = DataHelpers.table(@data)
+  .col-md-2
+    %h6 2. Partitioning
+    .other
+      = DataHelpers.table(@data_first, header: false)
+      = DataHelpers.table(@data_second, header: false)
+  .col-md-2
+    %h6 3. Ordering
+    .other
+      = DataHelpers.table(@data_first.sort_by{|a| -a.last }, header: false)
+      = DataHelpers.table(@data_second.sort_by{|a| -a.last }, header: false)
+  .col-md-2
+    %h6 4. Ranking
+    .other
+      = DataHelpers.table(@data_first_ranked.sort_by{|a| -a[-2] }, header: false)
+      = DataHelpers.table(@data_second_ranked.sort_by{|a| -a[-2] }, header: false)
+  .col-md-3
+    %h6 5. Result
+    = DataHelpers.table(@ranked_data)
+
+%h5 Ex2. Write a query that calculate points difference to the first player
+.row
+  .col-md-4
+    Assuming we have 3 players with 40, 55, 65 points respectively, you should see the following result:
+    = DataHelpers.table [%w(ID match_ID player_name points_difference), [1, 1, "Beo", 0], [2, 1, "Jarcos", 10], [3, 1, "Majchał", 15]]
+
+  .col-md-8.expandable
+    %a.btn.btn-secondary{href: '#', class: 'expand-link'} View answer
+    .content
+      %pre
+        %code
+          :preserve
+            SELECT
+              scores.*,
+              (max(points) OVER (PARTITION BY match_id)) - points AS score_distance
+            FROM
+              scores
+
+            -- filtering only added to better see what's happening
+            WHERE match_id in (1, 7)
+
+%h5 Window partition is optional
+
+.row
+  .col-md-6
+    %h6 No partition & no order
+    %pre
+      %code
+        :preserve
+          SELECT
+            scores.*,
+            -- will sum all rows from returned set
+            SUM(points) OVER () AS total_points
+          FROM
+            scores
+
+          -- filtering only added to better see what's happening
+          WHERE match_id in (1, 7)
+
+  .col-md-6
+    %h6 "Running sum" behavior without partition
+    %pre
+      %code
+        :preserve
+          SELECT
+            scores.*,
+            -- will sum all rows from returned set
+            SUM(points) OVER (ORDER BY points DESC) AS total_points
+          FROM
+            scores
+
+          -- filtering only added to better see what's happening
+          WHERE match_id in (1, 7)
+
+  .col-md-12
+    %h6 Ex3. Run both queries and see how <code>total_points</code> behaves when you remove row filtering (WHERE).
+
+%h5 Ex4. Named windows
+
+.row
+  .col-md-6
+    %p Consider following query, as you can see we use the same window partition multiple times, PostgreSQL provides syntax for defining partition by name for later reuse. It's usually a good practice to do so.
+
+    %p Go to PG docs and find how to do it then rewrite a query.
+.row
+  .col-md-6.code-group
+    %pre
+      %code
+        :preserve
+          SELECT
+            scores.*,
+    %pre.bold.red
+      %code
+        :preserve
+            AVG(points) OVER (PARTITION BY match_id) AS avg_score,
+            COUNT(*)    OVER (PARTITION BY match_id) AS players,
+            SUM(points) OVER (PARTITION BY match_id) AS total
+    %pre
+      %code
+        :preserve
+          FROM
+            scores
+          WHERE match_id IN (1, 7)
+
+  .col-md-6.expandable.code-group
+    %a.btn.btn-secondary{href: '#', class: 'expand-link'} View answer
+    .content
+      %pre
+        %code
+          :preserve
+            SELECT
+              scores.*,
+      %pre.bold.green
+        %code
+          :preserve
+              AVG(points) OVER per_match AS avg_score,
+              COUNT(*)    OVER per_match AS players,
+              SUM(points) OVER per_match AS total
+      %pre
+        %code
+          :preserve
+            FROM
+              scores
+            WHERE match_id IN (1, 7)
+      %pre.bold.green
+        %code
+          :preserve
+            WINDOW per_match AS (PARTITION BY match_id)

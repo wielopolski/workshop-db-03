@@ -1,0 +1,24 @@
+%div
+  %form.qform{action: "/q", method: "POST"}
+    %textarea{name: "query", rows: @rows}
+      = params[:query]
+    %input.btn.btn-primary{type: "submit", value: "Run query"}
+
+- if !@result.nil?
+  %div
+    %table.data.fluid
+      %thead
+        %tr
+          %th #
+          - @result.columns.each do |column|
+            %th= "#{column} (#{@result.column_types[column].class.to_s.split("::").last})"
+      %tbody
+        - @result.rows.each_with_index do |rows, index|
+          %tr
+            %td= index + 1
+            - rows.each do |cell|
+              %td= cell
+
+- if !@error.nil?
+  %div
+    = @error

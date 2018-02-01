@@ -6,5 +6,161 @@ pre {
   border-radius: 8px;
 }
 
+blockquote {
+  background-color: #eeeedd;
+  border: 1px solid #dbdbcc;
+  padding: 14px;
+  font-size: 12px;
+  border-radius: 8px;
+  margin: 4ex auto;
+  word-spacing: 0.2em;
+  letter-spacing: 0.3px;
+  line-height: 16px;
+}
+
+blockquote pre {
+  background: #ddddc6;
+}
+
+blockquote strong {
+  font-weight: bold;
+}
+
+blockquote.hint {
+  background-color: #dfebef;
+  border: 1px solid #a6c5de;
+  margin-top: 0;
+}
+
+blockquote.hint ul {
+  margin-bottom: 0;
+}
+
 h2 { margin-top: 32px; }
 h3 { margin-top: 16px; }
+h5 { margin-top: 32px; }
+
+.qform textarea {
+  width: 100%;
+  min-height: 250px;
+}
+
+table.data.fluid {
+  width: 100%;
+}
+
+table.data {
+  border: 2px solid #a6c5de;
+  margin: 30px auto;
+}
+
+table.data thead th {
+  background-color: #dfebef;
+  font-weight: bold;
+}
+
+table.data tr.selected, table.data tr.selected td {
+  background: #fafad2;
+}
+
+table.data tr.border td {
+  border-top: 2px solid blue;
+  border-bottom: 2px solid blue;
+}
+
+table.data tr.border td:first-child {
+  border-left: 2px solid blue;
+}
+
+table.data tr.border td:last-child {
+  border-right: 2px solid blue;
+}
+
+table.data td, table.data th {
+  border: 1px solid #a6c5de;
+  font-size: 12px;
+  padding: 2px 6px;
+}
+
+table.data td span.badge {
+  color: black;
+  border: 1px solid;
+}
+
+.tables {
+  display: flex;
+  align-content: space-between;
+  justify-content: space-evenly;
+  align-items: flex-start;
+}
+
+.tables table {
+  margin: 0;
+}
+
+.other table.data {
+  border-color: #cba6de;
+}
+
+.other table.data thead th {
+  background-color: #ebe0f0;
+}
+
+.other table.data td, .other table.data th {
+  border-color: #cba6de;
+}
+
+/* game related */
+.place_1 {
+  background-color: #ffd700;
+}
+
+.place_2 {
+  background-color: #c0c0c0;
+}
+
+.place_3 {
+  background-color: #967444;
+}
+
+.table td {
+  text-align: center;
+}
+
+td.avg {
+  border: 1px solid black;
+}
+
+.code-group {
+  margin-bottom: 16px;
+}
+
+.code-group pre {
+  margin: 0;
+}
+
+pre.bold {
+  font-weight: bold;
+}
+
+pre.green {
+  color: #11BB27;
+}
+
+pre.red {
+  color: #E00C00;
+}
+
+.expandable .content {
+  display: none;
+}
+
+.expandable  a.expand-link {
+  float: right;
+}
+
+.carousel-control-prev, .carousel-control-prev:hover, .carousel-control-prev:focus
+.carousel-control-next, .carousel-control-next:hover, .carousel-control-next:focus {
+  color: black;
+  font-size: 40px;
+}

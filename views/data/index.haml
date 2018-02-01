@@ -1,0 +1,42 @@
+%h4 Ref
+
+%ul
+  %li
+    %a{target: "_blank", href: "https://www.postgresql.org/docs/9.6/static/queries-with.html"} [PG documentation 9.6 - CTE]
+  %li
+    %a{target: "_blank", href: "https://www.postgresql.org/docs/9.6/static/tutorial-window.html"} [PG documentation 9.6 - window functions]
+  %li
+    %a{target: "_blank", href:  "https://www.postgresql.org/docs/9.6/static/sql-select.html#SQL-WINDOW"} [PG documentation 9.6 - window functions full syntax]
+  %li
+    %a{target: "_blank", href: "https://www.postgresql.org/docs/9.6/static/functions-window.html"} [PG documentation 9.6 - window related functions]
+  %li
+    %a{target: "_blank", href: "https://www.postgresql.org/docs/9.6/static/functions-aggregate.html"} [PG documentation 9.6 - aggregate functions]
+
+
+%h4 Data
+
+.row
+  - [Game, Player, Match, Score].each do |model_class|
+    .col-md-3
+      %pre
+        %code
+          :preserve
+            #{DataHelpers.model_info(model_class)}
+
+%table.table
+  %thead
+    %tr
+      %td Match / Player
+      %td.avg AVG
+      - @players.each do |player|
+        %td= player.name
+
+  %tbody
+    - @matches.each do |match|
+      %tr
+        %td= match.played_at
+        %td.avg= DataHelpers.format_number(match.average_score)
+        - @players.each do |player|
+          - score = match.scores.detect { |score| score.player_id == player.id }
+          %td{class: DataHelpers.classes_for_score(match, score)}
+            = score && score.points

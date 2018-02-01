@@ -1,0 +1,324 @@
+%h4
+  Window functions - framing options
+
+%blockquote
+  WINDOW window_name AS (<br>
+  &nbsp;&nbsp;[ PARTITION BY expression [, ...] ]<br>
+  &nbsp;&nbsp;[ ORDER BY expression [ ASC | DESC | USING operator ] [ NULLS { FIRST | LAST } ] [, ...] ]<br>
+  &nbsp;&nbsp;[ <strong>frame_clause</strong> ]<br>
+  )<br>
+
+%blockquote
+  <strong>frame_clause</strong>:<br><br>
+
+  { RANGE | ROWS } <strong>frame_start</strong><br>
+  { RANGE | ROWS } BETWEEN <strong>frame_start</strong> AND <strong>frame_end</strong>
+
+.row
+  .col-md-6
+    %blockquote
+      <strong>frame_start/frame_end</strong> for <strong>ROWS</strong> can be one of the following:<br><br>
+      UNBOUNDED PRECEDING<br>
+      value PRECEDING<br>
+      CURRENT ROW<br>
+      value FOLLOWING<br>
+      UNBOUNDED FOLLOWING<br>
+      <br>
+      <br>
+      In ROWS mode, CURRENT ROW means that the frame starts or ends with the current row.
+  .col-md-6
+    %blockquote
+      <strong>frame_start/frame_end</strong> for <strong>RANGE</strong> can be one of the following:<br><br>
+      UNBOUNDED PRECEDING<br>
+      CURRENT ROW<br>
+      UNBOUNDED FOLLOWING<br>
+      <br>
+      <br>
+      <strong>(!!! BE CAREFUL !!!)</strong>
+      In RANGE mode, CURRENT ROW means that the frame starts or ends with the current row's first or last peer in the ORDER BY ordering.
+
+%blockquote
+  When an aggregate function is used as a window function, it aggregates over the rows within the current row's window frame. An aggregate used with ORDER BY and the default window frame definition produces a "running sum" type of behavior, which may or may not be what's wanted. To obtain aggregation over the whole partition, omit ORDER BY or use ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING. Other frame specifications can be used to obtain other effects.
+
+%blockquote
+  The <strong>default</strong> framing option is <strong>RANGE UNBOUNDED PRECEDING</strong>, which is the same as <strong>RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW</strong>, so all three are equivalent:<br><br>
+
+  .row
+    .col-md-3.code-group
+      %pre.bold
+        %code
+          :preserve
+            WINDOW per_match AS ()
+    .col-md-4.code-group
+      %pre.bold
+        %code
+          :preserve
+            WINDOW per_match AS
+              (RANGE UNBOUNDED PRECEDING)
+    .col-md-5.code-group
+      %pre.bold
+        %code
+          :preserve
+            WINDOW per_match AS
+              (RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
+
+
+
+%h4 Framing options breakdown
+.row
+  .col-md-6
+    %h5 Get familiar with the following query
+    %pre
+      %code
+        :preserve
+          SELECT
+            m.game_id,
+            m.played_at,
+            m.year,
+            m.quarter,
+            m.month,
+            m.id,
+            SUM(s.points) AS sum,
+            COUNT(s.*) AS players,
+            ROUND(AVG(s.points), 2) AS avg
+          FROM matches m
+            JOIN scores s ON s.match_id = m.id
+            GROUP BY m.id
+  .col-md-6.code-group
+    %h5 Let's put the query in CTE and calculate some stats
+    %pre
+      %code
+        :preserve
+          WITH stats AS (
+            -- query here
+          )
+          SELECT
+            stats.game_id,
+            stats.id,
+            stats.year,
+            stats.quarter,
+    %pre.bold.green
+      %code
+        :preserve
+            ROUND(AVG(stats.sum) OVER recent, 2) AS recent_avg,
+            SUM(stats.sum) OVER recent AS recent_sum
+    %pre
+      %code
+        :preserve
+          FROM stats
+    %pre.bold.green
+      %code
+        :preserve
+          WINDOW recent AS (
+            PARTITION BY game_id, year, quarter
+            ORDER BY played_at, id
+            ROWS BETWEEN
+              4 PRECEDING
+            AND
+              CURRENT ROW
+          )
+    %pre
+      %code
+        :preserve
+          ORDER BY id
+
+.row
+  .col-md-3
+    %h5 1. Data
+    = DataHelpers.table(@data)
+  .col-md-3
+    %h5 2. Partition & order
+    .other
+      - @partitions.each do |partition|
+        = DataHelpers.table(@header + partition)
+  .col-md-6
+    %h5
+      3. Framing
+      .float-right
+        %button.btn.btn-default{"data-slide" => "prev", :href => "#slideshow", :role => "button"} &laquo;
+        %button.btn.btn-default{"data-slide" => "next", :href => "#slideshow", :role => "button"} &raquo;
+    .other
+      #slideshow.carousel{"data-ride" => "carousel", "data-interval" => "false"}
+        .carousel-inner
+          .carousel-item.active
+            = DataHelpers.table(@header + @partitions[0], labels: { 1 => ["current row", "4 preceding"] }, border: [1], selected: [1], attach_column: ["recent_sum", 283])
+            = DataHelpers.table(@header + @partitions[1], labels: { 1 => ["current row", "4 preceding"] }, border: [1], selected: [1], attach_column: ["recent_sum", 190])
+            = DataHelpers.table(@header + @partitions[2], labels: { 1 => ["current row", "4 preceding"] }, border: [1], selected: [1], attach_column: ["recent_sum", 270])
+          .carousel-item
+            = DataHelpers.table(@header + @partitions[0], labels: { 1 => "4 preceding", 2 => "current row" }, border: [2], selected: (1..2), attach_column: ["recent_sum", 283, "283 + 239 = #{283 + 239}"])
+            = DataHelpers.table(@header + @partitions[1], attach_column: ["recent_sum", 190])
+            = DataHelpers.table(@header + @partitions[2], labels: { 1 => "4 preceding", 2 => "current row" }, border: [2], selected: (1..2), attach_column: ["recent_sum", 270, "270 + 342 = #{270 + 342}"])
+          .carousel-item
+            = DataHelpers.table(@header + @partitions[0], labels: { 1 => "4 preceding", 3 => "current row" }, border: [3], selected: (1..3), attach_column: ["recent_sum", 283, "283 + 239 = #{283 + 239}", "283 + 239 + 357 = #{283 + 239 + 357}"])
+            = DataHelpers.table(@header + @partitions[1], attach_column: ["recent_sum", 190])
+            = DataHelpers.table(@header + @partitions[2], labels: { 1 => "4 preceding", 3 => "current row" }, border: [3], selected: (1..3), attach_column: ["recent_sum", 270, "270 + 342 = #{270 + 342}", "270 + 342 + 392 = #{270 + 342 + 392}"])
+          .carousel-item
+            = DataHelpers.table(@header + @partitions[0], attach_column: ["recent_sum", 283, 522, 879])
+            = DataHelpers.table(@header + @partitions[1], attach_column: ["recent_sum", 190])
+            = DataHelpers.table(@header + @partitions[2], labels: { 1 => "4 preceding", 4 => "current row" }, border: [4], selected: (1..4), attach_column: ["recent_sum", 270, "270 + 342 = #{270 + 342}", "270 + 342 + 392 = #{270 + 342 + 392}", "270 + 342 + 392 + 327 = #{270 + 342 + 392 + 327}"])
+          .carousel-item
+            = DataHelpers.table(@header + @partitions[0], attach_column: ["recent_sum", 283, 522, 879])
+            = DataHelpers.table(@header + @partitions[1], attach_column: ["recent_sum", 190])
+            = DataHelpers.table(@header + @partitions[2], labels: { 1 => "4 preceding", 5 => "current row" }, border: [5], selected: (1..5), attach_column: ["recent_sum", 270, "270 + 342 = #{270 + 342}", "270 + 342 + 392 = #{270 + 342 + 392}", "270 + 342 + 392 + 327 = #{270 + 342 + 392 + 327}", "270 + 342 + 392 + 327 + 334 = #{270 + 342 + 392 + 327 + 334}"])
+          .carousel-item
+            = DataHelpers.table(@header + @partitions[0], attach_column: ["recent_sum", 283, 522, 879])
+            = DataHelpers.table(@header + @partitions[1], attach_column: ["recent_sum", 190])
+            = DataHelpers.table(@header + @partitions[2], labels: { 2 => "4 preceding", 6 => "current row" }, border: [6], selected: (2..6), attach_column: ["recent_sum", 270, "270 + 342 = #{270 + 342}", "270 + 342 + 392 = #{270 + 342 + 392}", "270 + 342 + 392 + 327 = #{270 + 342 + 392 + 327}", "270 + 342 + 392 + 327 + 334 = #{270 + 342 + 392 + 327 + 334}", "342 + 392 + 327 + 334 + 403 = #{342 + 392 + 327 + 334 + 403}"])
+          .carousel-item
+            = DataHelpers.table(@header + @partitions[0], attach_column: ["recent_sum", 283, 522, 879])
+            = DataHelpers.table(@header + @partitions[1], attach_column: ["recent_sum", 190])
+            = DataHelpers.table(@header + @partitions[2], labels: { 3 => "4 preceding", 7 => "current row" }, border: [7], selected: (3..7), attach_column: ["recent_sum", 270, "270 + 342 = #{270 + 342}", "270 + 342 + 392 = #{270 + 342 + 392}", "270 + 342 + 392 + 327 = #{270 + 342 + 392 + 327}", "270 + 342 + 392 + 327 + 334 = #{270 + 342 + 392 + 327 + 334}", "342 + 392 + 327 + 334 + 403 = #{342 + 392 + 327 + 334 + 403}", "392 + 327 + 334 + 403 + 417 = #{392 + 327 + 334 + 403 + 417}"])
+          .carousel-item
+            = DataHelpers.table(@header + @partitions[0], attach_column: ["recent_sum", 283, 522, 879])
+            = DataHelpers.table(@header + @partitions[1], attach_column: ["recent_sum", 190])
+            = DataHelpers.table(@header + @partitions[2], labels: { 4 => "4 preceding", 8 => "current row" }, border: [8], selected: (4..8), attach_column: ["recent_sum", 270, "270 + 342 = #{270 + 342}", "270 + 342 + 392 = #{270 + 342 + 392}", "270 + 342 + 392 + 327 = #{270 + 342 + 392 + 327}", "270 + 342 + 392 + 327 + 334 = #{270 + 342 + 392 + 327 + 334}", "342 + 392 + 327 + 334 + 403 = #{342 + 392 + 327 + 334 + 403}", "392 + 327 + 334 + 403 + 417 = #{392 + 327 + 334 + 403 + 417}", "327 + 334 + 403 + 417 + 341 = #{327 + 334 + 403 + 417 + 341}"])
+          .carousel-item
+            = DataHelpers.table(@header + @partitions[0], attach_column: ["recent_sum", 283, 522, 879])
+            = DataHelpers.table(@header + @partitions[1], attach_column: ["recent_sum", 190])
+            = DataHelpers.table(@header + @partitions[2], labels: { 5 => "4 preceding", 9 => "current row" }, border: [9], selected: (5..9), attach_column: ["recent_sum", 270, "270 + 342 = #{270 + 342}", "270 + 342 + 392 = #{270 + 342 + 392}", "270 + 342 + 392 + 327 = #{270 + 342 + 392 + 327}", "270 + 342 + 392 + 327 + 334 = #{270 + 342 + 392 + 327 + 334}", "342 + 392 + 327 + 334 + 403 = #{342 + 392 + 327 + 334 + 403}", "392 + 327 + 334 + 403 + 417 = #{392 + 327 + 334 + 403 + 417}", "327 + 334 + 403 + 417 + 341 = #{327 + 334 + 403 + 417 + 341}", "334 + 403 + 417 + 341 + 275 = #{334 + 403 + 417 + 341 + 275}"])
+          .carousel-item
+            = DataHelpers.table(@header + @partitions[0], attach_column: ["recent_sum", 283, 522, 879])
+            = DataHelpers.table(@header + @partitions[1], attach_column: ["recent_sum", 190])
+            = DataHelpers.table(@header + @partitions[2], attach_column: ["recent_sum", 270, 612, 1004, 1331, 1665, 1798, 1873, 1822, 1770, 1832, 1790, 1711, 1708, 1747, 1832, 1745, "..."])
+
+%h5 Other frame examples
+.row.other
+  .col-md-3
+    %pre
+      %code
+        :preserve
+          ROWS BETWEEN
+            1 PRECEDING
+          AND
+            1 FOLLOWING
+    = DataHelpers.table(@header + @partitions[2], labels: { 4 => "1 preceding", 6 => "1 following" }, border: [5], selected: [4, 5, 6])
+  .col-md-3
+    %pre
+      %code
+        :preserve
+          ROWS BETWEEN
+            3 PRECEDING
+          AND
+            1 PRECEDING
+    = DataHelpers.table(@header + @partitions[2], labels: { 2 => "3 preceding", 4 => "1 preceding" }, border: [5], selected: [2, 3, 4])
+  .col-md-3
+    %pre
+      %code
+        :preserve
+          ROWS BETWEEN
+            CURRENT ROW
+          AND
+            UNBOUNDED FOLLOWING
+    = DataHelpers.table(@header + @partitions[2], labels: { 5 => "current row", (@partitions[2].size) => "unbounded following" }, border: [5], selected: (5..(@partitions[2].size)).to_a)
+  .col-md-3
+    %pre
+      %code
+        :preserve
+          ROWS BETWEEN
+            UNBOUNDED PRECEDING
+          AND
+            1 PRECEDING
+    = DataHelpers.table(@header + @partitions[2], labels: { 4 => "1 preceding", 1 => "unbounded preceding" }, border: [5], selected: (1..4).to_a)
+  %blockquote.hint
+    %code array_agg()
+    comes in handy when debugging frames
+
+%h4 Ex1.
+.row
+  .col-md-6
+    Define a window function that takes last 3 matches and calculates percentage distribution over sum of all points in that frame.
+    %h6 Example:
+    = DataHelpers.table([["id", "sum"], ["A", 100], ["B", 200], ["C", 300], ["D", 400]])
+    %h6 Expected result:
+    = DataHelpers.table([["id", "sum", "percentage_dist"], ["A", 100, "we don't care"], ["B", 200, "we don't care"], ["C", 300, "0.5 (because 300 / (100 + 200 + 300))"], ["D", 400, "0.(4) (because 400 / (200 + 300 + 400))"]])
+  .col-md-6.expandable.code-group
+    %a.btn.btn-secondary{href: '#', class: 'expand-link'} View answer
+    .content
+      %pre
+        %code
+          :preserve
+            WITH stats AS (...) -- stats query here
+            SELECT
+              *,
+      %pre.bold.green
+        %code
+          :preserve
+
+              stats.sum / SUM(stats.sum) OVER last_three
+      %pre
+        %code
+          :preserve
+            FROM stats
+      %pre.bold.green
+        %code
+          :preserve
+            WINDOW last_three AS (
+              PARTITION BY game_id
+              ORDER BY played_at
+              ROWS BETWEEN
+                2 PRECEDING
+              AND
+                CURRENT ROW
+            )
+
+
+%h4 Ex2.
+.row
+  .col-md-6
+    Write a query that generate following table:
+    = DataHelpers.table(@data2)
+
+    How many window functions do we need for this query?
+
+    %h5 Hints:
+    %ul
+      %li for text concatentaion you can use <code>concat(x, ' of ', y)</code>
+      %li
+        for conversion of bool type to yes/no you can use the following<br>
+        %code
+          :preserve
+            CASE WHEN condition_here THEN<br>
+            &nbsp;&nbsp;'yes'<br>
+            ELSE<br>
+            &nbsp;&nbsp;'no'<br>
+            END<br>
+  .col-md-6.expandable.code-group
+    %a.btn.btn-secondary{href: '#', class: 'expand-link'} View answer
+    .content
+      %pre
+        %code
+          :preserve
+            SELECT
+              scores.match_id,
+              players.name,
+      %pre.bold.green
+        %code
+          :preserve
+            rank() OVER w AS ranking,
+            concat(
+              points,
+              ' of ',
+              sum(points) OVER w
+            ) AS points_formatted,
+            round(avg(points) OVER w, 2) AS match_average,
+            CASE WHEN points > avg(points) OVER w THEN
+              'yes'
+            ELSE
+              'no'
+            END AS better_than_average
+      %pre
+        %code
+          :preserve
+            FROM scores
+            JOIN players ON players.id = scores.player_id
+      %pre.bold.green
+        %code
+          :preserve
+            WINDOW w AS (
+              PARTITION BY match_id
+              ORDER BY points DESC
+              ROWS BETWEEN
+                UNBOUNDED PRECEDING
+              AND
+                UNBOUNDED FOLLOWING
+            )
