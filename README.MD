@@ -1,11 +1,19 @@
 # Workshop DB 03 - CTEs and window functions
 
+## Configuration
+
+```
+cp config/{database.yml.example,database.yml}
+```
+
+
 ## Installation
 
 ```
 bundle install
-rake db:create db:migrate db:seed
+bundle exec rake db:create db:migrate db:seed
 ```
+
 
 ## Usage
 
