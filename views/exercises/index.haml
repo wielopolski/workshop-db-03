@@ -43,7 +43,7 @@
 %h4 Ex2.
 .row
   .col-md-6
-    Write a query that returns all scores and for each row holds a point difference to next player (the one who scored higher). First player different should be zero. (hint: <code>lead(...)</code>)
+    Write a query that returns all scores and for each row holds a point difference to next player (the one who scored higher). First player difference should be zero (calculate differences per match). (hint: <code>lead(...)</code>)
 
   .col-md-6.expandable.code-group
     %a.btn.btn-secondary{href: '#', class: 'expand-link'} View answer
@@ -69,7 +69,7 @@
     %ul
       %li '+' - when we have positive trend
       %li '-' - when we have negative trend
-      %li '0' - when nothing changed
+      %li '=' - when nothing changed
 
   .col-md-6.expandable.code-group
     %a.btn.btn-secondary{href: '#', class: 'expand-link'} View answer
