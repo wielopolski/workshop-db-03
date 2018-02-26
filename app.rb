@@ -3,21 +3,23 @@ class App < Sinatra::Base
 
   register Sinatra::ActiveRecordExtension
 
-  get '/q' do
-    @result = nil
-    @rows = 10
-    haml :'q/index'
-  end
-
-  post '/q' do
-    @rows = [params[:query].count("\n") + 1, 10].max
-    begin
-      @result = Game.connection.select_all(params[:query])
-    rescue ActiveRecord::StatementInvalid => e
-      @error = e
+  if ENV["RACK_ENV"] != "production"
+    get '/q' do
+      @result = nil
+      @rows = 10
+      haml :'q/index'
     end
 
-    haml :'q/index'
+    post '/q' do
+      @rows = [params[:query].count("\n") + 1, 10].max
+      begin
+        @result = Game.connection.select_all(params[:query])
+      rescue ActiveRecord::StatementInvalid => e
+        @error = e
+      end
+
+      haml :'q/index'
+    end
   end
 
   get '/' do

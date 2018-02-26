@@ -10,8 +10,9 @@
 
       .navbar-collapse
         .navbar-nav.mr-auto
-          %li.nav-item
-            %a.nav-link{href: "/q"} [Query tool]
+          - if ENV["RACK_ENV"] != "production"
+            %li.nav-item
+              %a.nav-link{href: "/q"} [Query tool]
 
           %li.nav-item
             %a.nav-link{href: "/data"} 1. Data
