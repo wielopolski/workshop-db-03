@@ -28,3 +28,7 @@ Starting a console:
 ```
 ./bin/irb
 ```
+
+## Demo
+
+https://selleo-workshop-db03.herokuapp.com
