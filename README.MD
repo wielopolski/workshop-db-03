@@ -20,7 +20,7 @@ bundle exec rake db:create db:migrate db:seed
 Starting a server:
 
 ```
-foreman start # app will start at http://localhost:9292
+PORT=3000 foreman start # app will start at http://localhost:3000
 ```
 
 Starting a console:
