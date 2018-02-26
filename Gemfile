@@ -10,8 +10,10 @@ gem 'pg'
 gem 'activerecord'
 gem 'sinatra-activerecord'
 
-gem 'pry'
-gem 'pry-remote'
-gem 'rerun'
+group :development do
+  gem 'pry'
+  gem 'pry-remote'
+  gem 'rerun'
+end
 
 gem 'haml'
