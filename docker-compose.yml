@@ -1,0 +1,28 @@
+version: '3'
+
+services:
+  web:
+    build:
+      context: .
+    ports:
+      - 3000:3000
+    environment:
+      - DATABASE_URL=postgres://workshop:secret@pg:5432/workshop?sslmode=disable
+
+  pg:
+    image: postgres:12.3-alpine
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: secret
+      POSTGRES_USER: workshop
+      POSTGRES_DB: workshop
+
+  pgweb:
+    image: sosedoff/pgweb
+    ports:
+      - "8081:8081"
+    environment:
+      - DATABASE_URL=postgres://workshop:secret@pg:5432/workshop?sslmode=disable
+    depends_on:
+      - pg
