@@ -1,4 +1,4 @@
-FROM ruby:2.6.8-buster
+FROM ruby:2.6.8-bullseye
 
 # skip apt key parsing warning
 ARG APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1
@@ -11,17 +11,19 @@ ENV BUNDLE_PATH /app/vendor/gems
 
 WORKDIR /app
 
-RUN echo "deb http://apt.postgresql.org/pub/repos/apt buster-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
-    && echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
+# Install PostgreSQL repository and Yarn repository
+RUN curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /usr/share/keyrings/postgresql-keyring.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/postgresql-keyring.gpg] http://apt.postgresql.org/pub/repos/apt bullseye-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
+    && curl -fsSL https://dl.yarnpkg.com/debian/pubkey.gpg | gpg --dearmor -o /usr/share/keyrings/yarn-keyring.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/yarn-keyring.gpg] https://dl.yarnpkg.com/debian stable main" > /etc/apt/sources.list.d/yarn.list
 
-RUN wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
-    && wget --quiet -O - https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - \
-    && apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y --no-install-recommends \
         nodejs \
         yarn \
         libpq-dev \
         ca-certificates \
-        postgresql-client-11
+        postgresql-client-13 \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY Gemfile* /app/
 RUN bundle config --global frozen 1 \
